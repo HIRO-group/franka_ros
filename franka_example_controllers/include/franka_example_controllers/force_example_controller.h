@@ -14,6 +14,7 @@
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
+#include <ros/ros.h>
 #include <Eigen/Core>
 
 #include <franka_example_controllers/desired_mass_paramConfig.h>
@@ -47,6 +48,7 @@ class ForceExampleController : public controller_interface::MultiInterfaceContro
   double target_k_i_{0.0};
   double filter_gain_{0.001};
   Eigen::Matrix<double, 7, 1> tau_ext_initial_;
+  std::array<double, 7> prev_qd;
   Eigen::Matrix<double, 7, 1> tau_error_;
   static constexpr double kDeltaTauMax{1.0};
 
@@ -56,6 +58,15 @@ class ForceExampleController : public controller_interface::MultiInterfaceContro
   ros::NodeHandle dynamic_reconfigure_desired_mass_param_node_;
   void desiredMassParamCallback(franka_example_controllers::desired_mass_paramConfig& config,
                                 uint32_t level);
+
+  // Torque Publisher
+  ros::Publisher tau_pub_0;
+  ros::Publisher tau_pub_1;
+  ros::Publisher tau_pub_2;
+  ros::Publisher tau_pub_3;
+  ros::Publisher tau_pub_4;
+  ros::Publisher tau_pub_5;
+  ros::Publisher tau_pub_6;
 };
 
 }  // namespace franka_example_controllers
