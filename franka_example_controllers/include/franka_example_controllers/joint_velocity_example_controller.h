@@ -50,10 +50,32 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   ros::Publisher tau_pub_0;
   ros::Publisher tau_pub_1;
   ros::Publisher tau_pub_2;
-  ros::Publisher tau_pub_3;
-  ros::Publisher tau_pub_4;
-  ros::Publisher tau_pub_5;
-  ros::Publisher tau_pub_6;
+  // ros::Publisher tau_pub_3;
+  // ros::Publisher tau_pub_4;
+  // ros::Publisher tau_pub_5;
+  // ros::Publisher tau_pub_6;
+  ros::Publisher signal_pub;
+  ros::Publisher mean_pub;
+  ros::Publisher std_dev_positive_pub;
+  ros::Publisher std_dev_negative_pub;
+  class zScore{
+    public:
+      int lag = 2000; // How many previous values are we talking into account for data smoothing
+      float threshold = 2; // Number of std deviations needed to show a signal
+      float influence = 1; // How much weight do we give to signaled values
+      double current_mean;
+      double current_stdDev;
+      std::tuple<bool, int> getSignal(double new_value);
+
+    private:
+      double getStdDev(std::vector<double> data);
+      double getMean(std::vector<double> data);
+      std::vector<double> lag_values;
+
+  };
+
+  zScore signal_parser;
+
 
 };
 
