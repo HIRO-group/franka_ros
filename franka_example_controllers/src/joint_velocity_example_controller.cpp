@@ -14,6 +14,8 @@
 #include "pseudo_inversion.h"
 #include <ros/ros.h>
 
+#include <numeric>
+
 namespace franka_example_controllers {
 
 bool JointVelocityExampleController::init(hardware_interface::RobotHW* robot_hardware,
@@ -27,10 +29,15 @@ bool JointVelocityExampleController::init(hardware_interface::RobotHW* robot_har
   tau_pub_0 = node_handle.advertise<std_msgs::Float64>("tau_est_0", 1);
   tau_pub_1 = node_handle.advertise<std_msgs::Float64>("tau_est_1", 1);
   tau_pub_2 = node_handle.advertise<std_msgs::Float64>("tau_est_2", 1);
-  tau_pub_3 = node_handle.advertise<std_msgs::Float64>("tau_est_3", 1);
-  tau_pub_4 = node_handle.advertise<std_msgs::Float64>("tau_est_4", 1);
-  tau_pub_5 = node_handle.advertise<std_msgs::Float64>("tau_est_5", 1);
-  tau_pub_6 = node_handle.advertise<std_msgs::Float64>("tau_est_6", 1);
+  // tau_pub_3 = node_handle.advertise<std_msgs::Float64>("tau_est_3", 1);
+  // tau_pub_4 = node_handle.advertise<std_msgs::Float64>("tau_est_4", 1);
+  // tau_pub_5 = node_handle.advertise<std_msgs::Float64>("tau_est_5", 1);
+  // tau_pub_6 = node_handle.advertise<std_msgs::Float64>("tau_est_6", 1);
+
+  signal_pub = node_handle.advertise<std_msgs::Float64>("force_signal", 1);
+  mean_pub = node_handle.advertise<std_msgs::Float64>("mean", 1);
+  std_dev_positive_pub = node_handle.advertise<std_msgs::Float64>("std_dev_positive", 1);
+  std_dev_negative_pub = node_handle.advertise<std_msgs::Float64>("std_dev_negative", 1);
 
   velocity_joint_interface_ = robot_hardware->get<hardware_interface::VelocityJointInterface>();
   if (velocity_joint_interface_ == nullptr) {
@@ -111,6 +118,53 @@ void JointVelocityExampleController::starting(const ros::Time& /* time */) {
   // Bias correction for the current external torque
   tau_ext_initial_ = tau_measured - gravity;
 }
+double JointVelocityExampleController::zScore::getStdDev(std::vector<double> data){
+    double mean = getMean(data);
+    double accum = 0.0;
+    std::for_each (data.begin(), data.end(), [&](const double d) {
+      accum += (d - mean) * (d - mean);
+    });
+
+    return sqrt(accum / (lag - 1));
+}
+double JointVelocityExampleController::zScore::getMean(std::vector<double> data){
+    double sum = std::accumulate(data.begin(), data.end(), 0.0);
+    return sum / data.size();
+}
+
+
+std::tuple<bool, int> JointVelocityExampleController::zScore::getSignal(double new_value){
+  // Do we have enough points to start the calculation?
+  if(lag_values.size() < lag){
+  
+    lag_values.push_back(new_value);
+    return std::make_tuple(false, 0);
+
+  }else{
+
+    current_mean = getMean(lag_values);
+    current_stdDev = getStdDev(lag_values);
+    int signal = 0;
+
+    if(std::abs(new_value - current_mean) > threshold * current_stdDev){
+      if(new_value > current_mean){
+        signal = 1;
+      }else{
+        signal = -1;
+      }
+      new_value = influence * new_value + (1 - influence) * lag_values[lag-1];
+    }
+
+    // At the end incorporate the new value into our list
+    lag_values.erase(lag_values.begin());
+    lag_values.push_back(new_value);
+    return std::make_tuple(true, signal);
+  }
+}
+
+
+
+
 
 void JointVelocityExampleController::update(const ros::Time& /* time */,
                                             const ros::Duration& period) {
@@ -138,7 +192,7 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
     joint_accs[i] = (robot_state.dq[i] - prev_qd[i]) / (period.toSec() * 10);
     // joint_accs[i] = 0.0;
 
-    std::cout << "current joint acc at " << i << ": " << joint_accs[i] << std::endl;
+    //std::cout << "current joint acc at " << i << ": " << joint_accs[i] << std::endl;
     // std::cout << "prev joint acc at " << i << ": " << prev_qd[i] << std::endl;
     prev_qd[i] = robot_state.dq[i];
 
@@ -164,9 +218,9 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   // tau_pub_6.publish(expected_torques(6));
   Eigen::VectorXd tau_est(7);
   tau_est = (mass_matrix * ddq) + coriolis_matrix + gravity + tau_ext_initial_;
-  for (int i = 0; i < 7; i++)
-  { 
-  }
+  // for (int i = 0; i < 7; i++)
+  // { 
+  // }
 
   Eigen::VectorXd tau_d(7), desired_force_torque(6), tau_cmd(7), tau_ext(7);
   desired_force_torque.setZero();
@@ -174,7 +228,7 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   // measure external torques
   // tau_ext_initial_ is a bias measurement
   tau_ext = tau_measured - gravity - tau_ext_initial_;
-  Eigen::MatrixXd expected_torques = (pinv  * (tau_measured - gravity -  coriolis_matrix - (mass_matrix * ddq))) - wrench;
+  Eigen::MatrixXd expected_torques = (pinv  * (tau_measured - gravity -  coriolis_matrix)) - wrench;
   elapsed_time_ += period;
 
   ros::Duration time_max(8.0);
@@ -190,12 +244,19 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   }
 
   desired_force_torque(2) = desired_mass_ * -9.81;
+  std::tuple<bool, int> signal_ret = signal_parser.getSignal(expected_torques(0));
+  if (std::get<0>(signal_ret)){
+    signal_pub.publish(double(std::get<1>(signal_ret)));
+    mean_pub.publish(signal_parser.current_mean);
+    std_dev_positive_pub.publish(signal_parser.current_mean + signal_parser.current_stdDev);
+    std_dev_negative_pub.publish(signal_parser.current_mean - signal_parser.current_stdDev);
+  }
   tau_pub_0.publish(expected_torques(0));
   tau_pub_1.publish(expected_torques(1));
   tau_pub_2.publish(expected_torques(2));
-  tau_pub_3.publish(expected_torques(3));
-  tau_pub_4.publish(expected_torques(4));
-  tau_pub_5.publish(expected_torques(5));
+  // tau_pub_3.publish(expected_torques(3));
+  // tau_pub_4.publish(expected_torques(4));
+  // tau_pub_5.publish(expected_torques(5));
 
 
 
