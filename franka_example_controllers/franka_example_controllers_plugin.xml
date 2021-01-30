@@ -45,4 +45,12 @@
     </description>
   </class>
 
+<!-- HIRO custom control classes -->
+  <class name="franka_example_controllers/HIROVelocityEffortController" type="franka_example_controllers::HIROVelocityEffortController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that executes a short motion based on joint velocities to demonstrate correct usage - soon will be changed to take torques into account
+    </description>
+  </class>
+
+
 </library>

@@ -54,10 +54,12 @@ add_library(franka_example_controllers
   src/cartesian_velocity_example_controller.cpp
   src/joint_position_example_controller.cpp
   src/joint_velocity_example_controller.cpp
+  src/hiro_joint_velocity_effort_controller.cpp
   src/model_example_controller.cpp
   src/joint_impedance_example_controller.cpp
   src/cartesian_impedance_example_controller.cpp
   src/force_example_controller.cpp
+  src/zScore.cpp
 )
 
 add_dependencies(franka_example_controllers

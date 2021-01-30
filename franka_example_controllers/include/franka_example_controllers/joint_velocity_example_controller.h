@@ -14,6 +14,9 @@
 #include <ros/time.h>
 #include <Eigen/Core>
 
+#include <franka_example_controllers/zScore.h>
+
+
 
 namespace franka_example_controllers {
 
@@ -26,6 +29,8 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   void update(const ros::Time&, const ros::Duration& period) override;
   void starting(const ros::Time&) override;
   void stopping(const ros::Time&) override;
+  int loops_without_signal;
+  int loops_with_signal;
 
  private:
   std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
@@ -47,9 +52,19 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   static constexpr double kDeltaTauMax{1.0};
 
   // Torque Publisher
-  ros::Publisher tau_pub_0;
-  ros::Publisher tau_pub_1;
-  ros::Publisher tau_pub_2;
+  ros::Publisher ext_cart_force_pub_x;
+  ros::Publisher ext_cart_force_pub_y;
+  ros::Publisher ext_cart_force_pub_z;
+
+
+  ros::Publisher x_dot_pub;
+  ros::Publisher y_dot_pub;
+  ros::Publisher z_dot_pub;
+
+  ros::Publisher cart_ext_pub1;
+  ros::Publisher cart_ext_pub2;
+  ros::Publisher cart_ext_pub3;
+  ros::Publisher cart_ext_sum;
   // ros::Publisher tau_pub_3;
   // ros::Publisher tau_pub_4;
   // ros::Publisher tau_pub_5;
@@ -58,23 +73,15 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   ros::Publisher mean_pub;
   ros::Publisher std_dev_positive_pub;
   ros::Publisher std_dev_negative_pub;
-  class zScore{
-    public:
-      int lag = 2000; // How many previous values are we talking into account for data smoothing
-      float threshold = 2; // Number of std deviations needed to show a signal
-      float influence = 1; // How much weight do we give to signaled values
-      double current_mean;
-      double current_stdDev;
-      std::tuple<bool, int> getSignal(double new_value);
 
-    private:
-      double getStdDev(std::vector<double> data);
-      double getMean(std::vector<double> data);
-      std::vector<double> lag_values;
 
-  };
+  zScore signal_parser_x;
+  zScore signal_parser_y;
+  zScore signal_parser_z;
+  // zScore signal_parser_sum;
 
-  zScore signal_parser;
+
+  bool pause_movement = false;
 
 
 };

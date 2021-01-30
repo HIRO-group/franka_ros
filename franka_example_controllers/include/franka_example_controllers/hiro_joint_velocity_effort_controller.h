@@ -19,6 +19,11 @@
 #include <std_msgs/Float64MultiArray.h>
 
 
+#include <Eigen/Core>
+
+
+
+
 namespace franka_example_controllers {
 
 class HIROVelocityEffortController : public controller_interface::MultiInterfaceController<
@@ -40,13 +45,26 @@ class HIROVelocityEffortController : public controller_interface::MultiInterface
 
   ros::Duration elapsed_time_;
 
-  std::array<double, 7> p_gains{0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
+  ros::Publisher command_pub1;
+  std::vector<ros::Publisher> pubs;
+  std::vector<ros::Publisher> pubs_fake;
+
+
+  std::array<double, 7> prev_qd;
+  Eigen::Matrix<double, 7, 1> tau_ext_initial_;
+
+
+  std::array<double, 7> p_gains{50, 50, 50, 20, 20, 20, 10};
   std::array<double, 7> i_gains{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::array<double, 7> d_gains{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   std::array<double, 7> i_errors{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 
+  Eigen::VectorXd r{6};
+  Eigen::VectorXd t_c{7};
+
+  Eigen::VectorXd cum_sum{7};
 
   // Added to allow for effort interface
   std::vector<hardware_interface::JointHandle> effort_joint_handles_;

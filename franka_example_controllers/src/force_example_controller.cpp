@@ -173,15 +173,15 @@ void ForceExampleController::update(const ros::Time& /*time*/, const ros::Durati
   // measure external torques
   // tau_ext_initial_ is a bias measurement
   tau_ext = tau_measured - gravity - tau_ext_initial_;
-  Eigen::MatrixXd expected_torques = (pinv  * (tau_measured - gravity)) - wrench;
+  Eigen::MatrixXd expected_torques = wrench - (pinv  * (gravity + tau_ext_initial_));
 
   // std::cout << expected_torques << std::endl;
-  tau_pub_0.publish(expected_torques(0));
-  tau_pub_1.publish(expected_torques(1));
-  tau_pub_2.publish(expected_torques(2));
-  tau_pub_3.publish(expected_torques(3));
-  tau_pub_4.publish(expected_torques(4));
-  tau_pub_5.publish(expected_torques(5));
+  // tau_pub_0.publish(tau_ext(0));
+  // tau_pub_1.publish(tau_ext(1));
+  // tau_pub_2.publish(tau_ext(2));
+  // tau_pub_3.publish(tau_ext(3));
+  // tau_pub_4.publish(tau_ext(4));
+  // tau_pub_5.publish(tau_ext(5));
   // Publish tau error for plotting
   // tau_pub_0.publish(tau_est(0));
   // tau_pub_1.publish(tau_est(1));
@@ -198,17 +198,17 @@ void ForceExampleController::update(const ros::Time& /*time*/, const ros::Durati
   tau_cmd = tau_d + k_p_ * (tau_d - tau_ext) + k_i_ * tau_error_;
   tau_cmd << saturateTorqueRate(tau_cmd, tau_J_d);
 
-  // tau_pub_0.publish(tau_error_(0));
-  // tau_pub_1.publish(tau_error_(1));
-  // tau_pub_2.publish(tau_error_(2));
-  // tau_pub_3.publish(tau_error_(3));
-  // tau_pub_4.publish(tau_error_(4));
-  // tau_pub_5.publish(tau_error_(5));
-  // tau_pub_6.publish(tau_error_(6));
+  tau_pub_0.publish(expected_torques(0));
+  tau_pub_1.publish(expected_torques(1));
+  tau_pub_2.publish(expected_torques(2));
+  tau_pub_3.publish(expected_torques(3));
+  tau_pub_4.publish(expected_torques(4));
+  tau_pub_5.publish(expected_torques(5));
+  // tau_pub_6.publish(tau_cmd(6));
 
   for (size_t i = 0; i < 7; ++i) {
 
-    joint_handles_[i].setCommand(tau_cmd(i));
+    // joint_handles_[i].setCommand(tau_cmd(i));
     prev_qd[i] = robot_state.dq[i];
   }
 

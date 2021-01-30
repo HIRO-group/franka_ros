@@ -23,21 +23,35 @@ bool JointVelocityExampleController::init(hardware_interface::RobotHW* robot_har
 
   for (int i = 0; i < 7; i++)
   {
-    prev_qd[0] = 0.0;
+    prev_qd[i] = 0.0;
   }
 
-  tau_pub_0 = node_handle.advertise<std_msgs::Float64>("tau_est_0", 1);
-  tau_pub_1 = node_handle.advertise<std_msgs::Float64>("tau_est_1", 1);
-  tau_pub_2 = node_handle.advertise<std_msgs::Float64>("tau_est_2", 1);
+  ext_cart_force_pub_x = node_handle.advertise<std_msgs::Float64>("ext_cart_force_x", 1);
+  ext_cart_force_pub_y = node_handle.advertise<std_msgs::Float64>("ext_cart_force_y", 1);
+  ext_cart_force_pub_z = node_handle.advertise<std_msgs::Float64>("ext_cart_force_z", 1);
+
+
+  x_dot_pub = node_handle.advertise<std_msgs::Float64>("x_dot", 1);
+  y_dot_pub = node_handle.advertise<std_msgs::Float64>("y_dot", 1);
+  z_dot_pub = node_handle.advertise<std_msgs::Float64>("z_dot", 1);
+
+
+
+  cart_ext_pub1 = node_handle.advertise<std_msgs::Float64>("cart_ext_pub1", 1);
+  cart_ext_pub2 = node_handle.advertise<std_msgs::Float64>("cart_ext_pub2", 1);
+  cart_ext_pub3 = node_handle.advertise<std_msgs::Float64>("cart_ext_pub3", 1);
+  cart_ext_sum = node_handle.advertise<std_msgs::Float64>("cart_ext_sum", 1);
   // tau_pub_3 = node_handle.advertise<std_msgs::Float64>("tau_est_3", 1);
   // tau_pub_4 = node_handle.advertise<std_msgs::Float64>("tau_est_4", 1);
   // tau_pub_5 = node_handle.advertise<std_msgs::Float64>("tau_est_5", 1);
   // tau_pub_6 = node_handle.advertise<std_msgs::Float64>("tau_est_6", 1);
+  this->signal_parser_x = zScore(node_handle, "x");
+  this->signal_parser_y = zScore(node_handle, "y");
+  this->signal_parser_z = zScore(node_handle, "z");
 
-  signal_pub = node_handle.advertise<std_msgs::Float64>("force_signal", 1);
-  mean_pub = node_handle.advertise<std_msgs::Float64>("mean", 1);
-  std_dev_positive_pub = node_handle.advertise<std_msgs::Float64>("std_dev_positive", 1);
-  std_dev_negative_pub = node_handle.advertise<std_msgs::Float64>("std_dev_negative", 1);
+
+  this->loops_without_signal = 0;
+  this->loops_with_signal = 0;
 
   velocity_joint_interface_ = robot_hardware->get<hardware_interface::VelocityJointInterface>();
   if (velocity_joint_interface_ == nullptr) {
@@ -118,51 +132,6 @@ void JointVelocityExampleController::starting(const ros::Time& /* time */) {
   // Bias correction for the current external torque
   tau_ext_initial_ = tau_measured - gravity;
 }
-double JointVelocityExampleController::zScore::getStdDev(std::vector<double> data){
-    double mean = getMean(data);
-    double accum = 0.0;
-    std::for_each (data.begin(), data.end(), [&](const double d) {
-      accum += (d - mean) * (d - mean);
-    });
-
-    return sqrt(accum / (lag - 1));
-}
-double JointVelocityExampleController::zScore::getMean(std::vector<double> data){
-    double sum = std::accumulate(data.begin(), data.end(), 0.0);
-    return sum / data.size();
-}
-
-
-std::tuple<bool, int> JointVelocityExampleController::zScore::getSignal(double new_value){
-  // Do we have enough points to start the calculation?
-  if(lag_values.size() < lag){
-  
-    lag_values.push_back(new_value);
-    return std::make_tuple(false, 0);
-
-  }else{
-
-    current_mean = getMean(lag_values);
-    current_stdDev = getStdDev(lag_values);
-    int signal = 0;
-
-    if(std::abs(new_value - current_mean) > threshold * current_stdDev){
-      if(new_value > current_mean){
-        signal = 1;
-      }else{
-        signal = -1;
-      }
-      new_value = influence * new_value + (1 - influence) * lag_values[lag-1];
-    }
-
-    // At the end incorporate the new value into our list
-    lag_values.erase(lag_values.begin());
-    lag_values.push_back(new_value);
-    return std::make_tuple(true, signal);
-  }
-}
-
-
 
 
 
@@ -176,11 +145,32 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   std::array<double, 7> gravity_array = model_handle_->getGravity();
   Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(robot_state.tau_J.data());
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_filtered(robot_state.tau_ext_hat_filtered.data());
+
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_J_d(  // NOLINT (readability-identifier-naming)
       robot_state.tau_J_d.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
 
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> q_dot(robot_state.dq.data());
+
+
   Eigen::Map<Eigen::Matrix<double, 6, 1>> wrench(robot_state.O_F_ext_hat_K.data());
+
+
+  // get cartesian velocities
+
+  Eigen::MatrixXd x_dot = jacobian * q_dot;
+
+  x_dot_pub.publish(x_dot(0));
+  y_dot_pub.publish(x_dot(1));
+  z_dot_pub.publish(x_dot(2));
+  double t1 = signal_parser_x.updateThreshold(x_dot(0));
+  double t2 = signal_parser_y.updateThreshold(x_dot(1));
+  double t3 = signal_parser_z.updateThreshold(x_dot(2));
+
+  cart_ext_pub1.publish(t1);
+  cart_ext_pub2.publish(t2);
+  cart_ext_pub3.publish(t3);
 
 
   std::array<double, 49> mass = model_handle_->getMass();
@@ -189,6 +179,7 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   std::array<double, 7> joint_accs;
   for (int i = 0; i < 7; i++)
   { 
+    // joint_accs[i] = (robot_state.dq[i] - prev_qd[i]) / (period.toSec() * 10);
     joint_accs[i] = (robot_state.dq[i] - prev_qd[i]) / (period.toSec() * 10);
     // joint_accs[i] = 0.0;
 
@@ -213,9 +204,9 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   jacobian_transpose_pinv = jacobian.transpose().completeOrthogonalDecomposition().pseudoInverse();
   Eigen::Map<Eigen::Matrix<double, 6, 7>> pinv(jacobian_transpose_pinv.data());
 
-  // Eigen::MatrixXd expected_torques = jacobian.transpose()  * wrench;
+  // Eigen::MatrixXd ext_cartesian_wrench = jacobian.transpose()  * wrench;
   
-  // tau_pub_6.publish(expected_torques(6));
+  // tau_pub_6.publish(ext_cartesian_wrench(6));
   Eigen::VectorXd tau_est(7);
   tau_est = (mass_matrix * ddq) + coriolis_matrix + gravity + tau_ext_initial_;
   // for (int i = 0; i < 7; i++)
@@ -228,37 +219,117 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   // measure external torques
   // tau_ext_initial_ is a bias measurement
   tau_ext = tau_measured - gravity - tau_ext_initial_;
-  Eigen::MatrixXd expected_torques = (pinv  * (tau_measured - gravity -  coriolis_matrix)) - wrench;
-  elapsed_time_ += period;
+  // Eigen::MatrixXd ext_cartesian_wrench = (pinv  * (tau_measured - gravity -  coriolis_matrix)) - wrench;
+  // Eigen::MatrixXd ext_cartesian_wrench = (pinv  * (tau_measured - gravity -  coriolis_matrix - (mass_matrix * ddq))) - wrench;
+  Eigen::MatrixXd ext_cartesian_wrench = (pinv  * (tau_measured - gravity -  coriolis_matrix - (0.1 * (mass_matrix * ddq)))) - wrench;
 
-  ros::Duration time_max(8.0);
-  double omega_max = 0.1;
-  double cycle = std::floor(
-      std::pow(-1.0, (elapsed_time_.toSec() - std::fmod(elapsed_time_.toSec(), time_max.toSec())) /
+  // ext_cartesian_wrench = tau_filtered;
+
+  elapsed_time_ += period;
+  desired_force_torque(2) = desired_mass_ * -9.81;
+
+ 
+
+  // std::tuple<bool, float> signal_ret_x = signal_parser_x.getSignal(ext_cartesian_wrench(0));
+  // std::tuple<bool, float> signal_ret_y = signal_parser_y.getSignal(ext_cartesian_wrench(1));
+  // std::tuple<bool, float> signal_ret_z = signal_parser_z.getSignal(ext_cartesian_wrench(2));
+  // std::tuple<bool, float> signal_ret_sum =  signal_parser_sum.getSignal(std::abs(ext_cartesian_wrench(0)) + std::abs(ext_cartesian_wrench(1)) + std::abs(ext_cartesian_wrench(2)));
+  // display external cartesian force and convert to velocities via cartesian compliance values
+
+  // Eigen::Vector3d f = Eigen::Vector3d(std::get<1>(signal_ret_x), std::get<1>(signal_ret_y), std::get<1>(signal_ret_z));
+  Eigen::Vector3d cartesian_velocities = Eigen::Vector3d(0.5 * ext_cartesian_wrench(0), 0.5 * ext_cartesian_wrench(1), 0.5 * ext_cartesian_wrench(2));
+  
+  // convert to joint space and get joint velocities
+  Eigen::MatrixXd jacobian_pinv;
+  jacobian_pinv = jacobian.completeOrthogonalDecomposition().pseudoInverse();
+
+  Eigen::VectorXd q_d = jacobian_pinv * cartesian_velocities;
+
+  // publish externally detected cartesian forces
+  // cart_ext_pub1.publish(ext_cartesian_wrench(0));
+  // cart_ext_pub2.publish(ext_cartesian_wrench(1));
+  // cart_ext_pub3.publish(ext_cartesian_wrench(2));
+  std::tuple<bool, float> x_signal_ret = signal_parser_x.getSignal(ext_cartesian_wrench(0));
+  // cart_ext_sum.publish(double(std::get<1>(signal_ret_sum)));
+
+  // double external
+  // signal_pub.publish(double(std::get<1>(signal_ret_x)));
+  // signal_pub.publish(double(std::get<1>(signal_ret_x)));
+  // signal_pub.publish(double(std::get<1>(signal_ret_x)));
+
+  // mean_pub.publish(signal_parser_sum.current_mean);
+  // std_dev_positive_pub.publish(signal_parser_sum.current_mean + signal_parser_sum.current_stdDev * signal_parser_sum.threshold);
+  // std_dev_negative_pub.publish(signal_parser_sum.current_mean - signal_parser_sum.current_stdDev * signal_parser_sum.threshold);
+
+
+
+  // if (std::get<0>(signal_ret_sum)){
+  //   this->loops_with_signal++;
+  //   if (this->loops_with_signal > 15){
+  //     signal_parser_sum.threshold = 15;
+  //     this->loops_without_signal = 0;
+  //     std::cout << "pause_movement:" << this->loops_with_signal << std::endl;
+  //     this->pause_movement = true;
+  //   }
+
+  // }else{
+  //   this->loops_with_signal = 0;
+   
+  //   // this->loops_without_signal++;
+  //   // if(this->loops_without_signal > 1000){
+  //   //   this->loops_with_signal = 0;
+  //   //   std::cout << "normal_movement:" << this->loops_without_signal << std::endl;
+  //   //   this->pause_movement = false;
+  //   // }
+
+  // }
+
+
+  if (std::get<0>(x_signal_ret)){
+    this->loops_with_signal++;
+    if (this->loops_with_signal > 10){
+      this->loops_without_signal = 0;
+      std::cout << "pause_movement:" << this->loops_with_signal << std::endl;
+      this->pause_movement = true;
+    }
+
+  }else{
+    this->loops_with_signal = 0;
+   
+    // this->loops_without_signal++;
+    // if(this->loops_without_signal > 1000){
+    //   this->loops_with_signal = 0;
+    //   std::cout << "normal_movement:" << this->loops_without_signal << std::endl;
+    //   this->pause_movement = false;
+    // }
+  }
+  
+  ext_cart_force_pub_x.publish(ext_cartesian_wrench(0));
+  ext_cart_force_pub_y.publish(ext_cartesian_wrench(1));
+  ext_cart_force_pub_z.publish(ext_cartesian_wrench(2));
+  // tau_pub_3.publish(ext_cartesian_wrench(3));
+  // tau_pub_4.publish(ext_cartesian_wrench(4));
+  // tau_pub_5.publish(ext_cartesian_wrench(5));
+
+    ros::Duration time_max(4.0);
+    double omega_max = 0.1;
+    double cycle = std::floor(
+    std::pow(-1.0, (elapsed_time_.toSec() - std::fmod(elapsed_time_.toSec(), time_max.toSec())) /
                          time_max.toSec()));
-  double omega = cycle * omega_max / 2.0 *
+    double omega = cycle * omega_max / 2.0 *
                  (1.0 - std::cos(2.0 * M_PI / time_max.toSec() * elapsed_time_.toSec()));
+    omega *=3;
+
+
+  if (this->pause_movement){    
+    // Just slow down the robot after contact is made
+    //omega *= 0.1;
+    omega = 0;
+  }
 
   for (auto joint_handle : velocity_joint_handles_) {
-    joint_handle.setCommand(omega);
+      joint_handle.setCommand(omega);
   }
-
-  desired_force_torque(2) = desired_mass_ * -9.81;
-  std::tuple<bool, int> signal_ret = signal_parser.getSignal(expected_torques(0));
-  if (std::get<0>(signal_ret)){
-    signal_pub.publish(double(std::get<1>(signal_ret)));
-    mean_pub.publish(signal_parser.current_mean);
-    std_dev_positive_pub.publish(signal_parser.current_mean + signal_parser.current_stdDev);
-    std_dev_negative_pub.publish(signal_parser.current_mean - signal_parser.current_stdDev);
-  }
-  tau_pub_0.publish(expected_torques(0));
-  tau_pub_1.publish(expected_torques(1));
-  tau_pub_2.publish(expected_torques(2));
-  // tau_pub_3.publish(expected_torques(3));
-  // tau_pub_4.publish(expected_torques(4));
-  // tau_pub_5.publish(expected_torques(5));
-
-
 
 }
 
