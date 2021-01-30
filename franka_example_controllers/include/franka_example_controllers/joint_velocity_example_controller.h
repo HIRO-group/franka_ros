@@ -33,11 +33,40 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   int loops_with_signal;
 
  private:
+
+  //helper functions to clean up: init
+  bool setupController(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle);
+  void setPublishers( ros::NodeHandle& node_handle);
+  void setSignalParsers( ros::NodeHandle& node_handle);
+  void setValueTrackers();
+
+  //helper functions to clean up: update
+  Eigen::MatrixXd getCartesianVelocity(Eigen::Map<Eigen::Matrix<double, 6, 7>> &jacobian,
+                                       Eigen::Map<Eigen::Matrix<double, 7, 1>> &q_dot,
+                                       bool publish_velocity);
+
+  void updateSignalThresholds(Eigen::MatrixXd& x_dot);
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> updateJointAcceleration(franka::RobotState &robot_state, 
+                               std::array<double, 7> &joint_accs, 
+                               const ros::Duration& period);
+
+  Eigen::MatrixXd getExternalWrench(Eigen::Map<Eigen::Matrix<double, 6, 7>>& pinv,
+                                    Eigen::Map<Eigen::Matrix<double, 7, 1>>& tau_measured,
+                                    Eigen::Map<Eigen::Matrix<double, 7, 1>>& gravity,
+                                    Eigen::Map<Eigen::Matrix<double, 7, 1>>& coriolis_matrix,
+                                    Eigen::Map<Eigen::Matrix<double, 7, 7>>& mass_matrix,
+                                    Eigen::Map<Eigen::Matrix<double, 7, 1>>& ddq,
+                                    Eigen::Map<Eigen::Matrix<double, 6, 1>>& wrench,
+                                    bool publish_values);
+
+
   std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
   std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
   hardware_interface::VelocityJointInterface* velocity_joint_interface_;
   std::vector<hardware_interface::JointHandle> velocity_joint_handles_;
   ros::Duration elapsed_time_;
+
+
 
   double desired_mass_{0.0};
   double target_mass_{0.0};
@@ -65,10 +94,7 @@ class JointVelocityExampleController : public controller_interface::MultiInterfa
   ros::Publisher cart_ext_pub2;
   ros::Publisher cart_ext_pub3;
   ros::Publisher cart_ext_sum;
-  // ros::Publisher tau_pub_3;
-  // ros::Publisher tau_pub_4;
-  // ros::Publisher tau_pub_5;
-  // ros::Publisher tau_pub_6;
+
   ros::Publisher signal_pub;
   ros::Publisher mean_pub;
   ros::Publisher std_dev_positive_pub;
