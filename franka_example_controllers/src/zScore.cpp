@@ -25,8 +25,11 @@ zScore::zScore(){
 
 double zScore::updateThreshold(double velocity)
 {
-    threshold = max_threshold + (-(max_threshold * 3) * abs(velocity));
-    threshold = max_threshold;
+    float max = max_threshold - 1;
+    float a = 0.6;
+
+
+    threshold = (max/(1 + std::exp((10 * std::abs(velocity))/a - max))) + 0.3;
     return threshold;
 }
 

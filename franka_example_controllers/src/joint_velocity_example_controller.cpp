@@ -206,7 +206,7 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
 
   // get cartesian velocities
   Eigen::MatrixXd x_dot = getCartesianVelocity(jacobian, q_dot, true);
-  //updateSignalThresholds(x_dot);
+  updateSignalThresholds(x_dot);
 
   // invert jac transpose
   Eigen::MatrixXd jacobian_transpose_pinv = jacobian.transpose().completeOrthogonalDecomposition().pseudoInverse();
@@ -226,11 +226,12 @@ void JointVelocityExampleController::update(const ros::Time& /* time */,
   if (std::get<0>(y_signal_ret)){
     loops_with_signal++;
     std::cout << "outside limit:" << loops_with_signal << std::endl;
-    if (loops_with_signal > 10){
+    if (loops_with_signal > 5){
       loops_without_signal = 0;
       std::cout << "pause_movement:" << loops_with_signal << std::endl;
       pause_movement = true;
     }
+
   }else{
     loops_with_signal = 0;
   }

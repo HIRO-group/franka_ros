@@ -14,12 +14,12 @@
  
   class zScore{
     public:
-      int lag = 2000; // How many previous values are we talking into account for data smoothing
+      int lag = 500; // How many previous values are we talking into account for data smoothing
       float threshold = 5; // Number of std deviations needed to show a signal
       float influence = 0; // How much weight do we give to signaled values
       bool publish_values = true; // Do you want these values continuously published in ros?
       
-      float max_threshold = 4;
+      float max_threshold = 6.7;
       std::tuple<bool, float> getSignal(double new_value);
       double updateThreshold(double velocity);
 
