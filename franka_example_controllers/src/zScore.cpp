@@ -85,7 +85,6 @@ void zScore::publishValues(){
     }
 }
 
-
 double zScore::getStdDev(std::vector<double> data){
     double mean = getMean(data);
     double accum = 0.0;
