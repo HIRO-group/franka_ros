@@ -12,6 +12,8 @@
 
 #include <franka/robot_state.h>
 #include "pseudo_inversion.h"
+#include "utils.h"
+
 namespace franka_example_controllers {
 
 bool ForceExampleController::init(hardware_interface::RobotHW* robot_hw,
@@ -198,12 +200,12 @@ void ForceExampleController::update(const ros::Time& /*time*/, const ros::Durati
   tau_cmd = tau_d + k_p_ * (tau_d - tau_ext) + k_i_ * tau_error_;
   tau_cmd << saturateTorqueRate(tau_cmd, tau_J_d);
 
-  tau_pub_0.publish(expected_torques(0));
-  tau_pub_1.publish(expected_torques(1));
-  tau_pub_2.publish(expected_torques(2));
-  tau_pub_3.publish(expected_torques(3));
-  tau_pub_4.publish(expected_torques(4));
-  tau_pub_5.publish(expected_torques(5));
+  tau_pub_0.publish(toROSType(expected_torques(0)));
+  tau_pub_1.publish(toROSType(expected_torques(1)));
+  tau_pub_2.publish(toROSType(expected_torques(2)));
+  tau_pub_3.publish(toROSType(expected_torques(3)));
+  tau_pub_4.publish(toROSType(expected_torques(4)));
+  tau_pub_5.publish(toROSType(expected_torques(5)));
   // tau_pub_6.publish(tau_cmd(6));
 
   for (size_t i = 0; i < 7; ++i) {

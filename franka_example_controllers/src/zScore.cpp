@@ -1,5 +1,5 @@
 #include <franka_example_controllers/zScore.h>
-
+#include "utils.h"
 
 // Constructors
 zScore::zScore(ros::NodeHandle & node_handle, std::string topic_prefix){
@@ -77,11 +77,11 @@ void zScore::publishValues(){
 
     if(this->publish_values){
         //Create all topics we will publish values to
-        pub_mean.publish(current_mean);
-        pub_positive_threshold.publish(current_mean + current_stdDev * threshold);
-        pub_negative_threshold.publish(current_mean - current_stdDev * threshold);
-        pub_signal.publish(current_signal);
-        pub_raw_value.publish(current_raw_value);
+        pub_mean.publish(toROSType(current_mean));
+        pub_positive_threshold.publish(toROSType(current_mean + current_stdDev * threshold));
+        pub_negative_threshold.publish(toROSType(current_mean - current_stdDev * threshold));
+        pub_signal.publish(toROSType(current_signal));
+        pub_raw_value.publish(toROSType(current_raw_value));
     }
 }
 

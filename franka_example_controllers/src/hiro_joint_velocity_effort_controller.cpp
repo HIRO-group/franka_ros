@@ -14,6 +14,7 @@
 #include <franka/robot_state.h>
 #include "pseudo_inversion.h"
 #include <ros/ros.h>
+#include "utils.h"
 
 #include <numeric>
 
@@ -213,14 +214,14 @@ void HIROVelocityEffortController::update(const ros::Time& /* time */,
     effort_joint_handles_[i].setCommand(control_command);
     
 
-    pubs[i].publish(control_command);
+    pubs[i].publish(toROSType(control_command));
     // pubs_fake[i].publish(r(i) - (control_command));
   }
   r =  (pinv * (tau_measured - (tau_J_d + gravity))) - wrench;
   for (int i =0; i<7; i++)
   {
     std::cout << r(i) << std::endl;
-    pubs_fake[i].publish(r(i));
+    pubs_fake[i].publish(toROSType(r(i)));
 
   }
   // r = (tau_measured - gravity - coriolis_matrix - (mass_matrix * dq) - tau_ext_initial_);
