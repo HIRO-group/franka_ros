@@ -8,6 +8,7 @@
 #include "std_msgs/Float64.h"
 #include <franka/robot_state.h>
 #include "pseudo_inversion.h"
+#include "utils.h"
 #include <ros/ros.h>
 #include <numeric>
 
@@ -133,9 +134,9 @@ Eigen::MatrixXd JointVelocityExampleController::getCartesianVelocity(
                                        bool publish_velocity){
   Eigen::MatrixXd x_dot = jacobian * q_dot;
   if(publish_velocity){
-    x_dot_pub.publish(x_dot(0));
-    y_dot_pub.publish(x_dot(1));
-    z_dot_pub.publish(x_dot(2));  
+    x_dot_pub.publish(toROSType(x_dot(0)));
+    y_dot_pub.publish(toROSType(x_dot(1)));
+    z_dot_pub.publish(toROSType(x_dot(2)));
   }
   return x_dot;
 }
@@ -172,9 +173,9 @@ Eigen::Map<Eigen::Matrix<double, 7, 1>> JointVelocityExampleController::updateJo
   Eigen::VectorXd tau_ext = tau_measured - gravity - tau_ext_initial_;
   Eigen::MatrixXd ext_cartesian_wrench = (pinv  * (tau_measured - gravity -  coriolis_matrix - (0.1 * (mass_matrix * ddq)))) - wrench;
   if(publish_values){
-    ext_cart_force_pub_x.publish(ext_cartesian_wrench(0));
-    ext_cart_force_pub_y.publish(ext_cartesian_wrench(1));
-    ext_cart_force_pub_z.publish(ext_cartesian_wrench(2));
+    ext_cart_force_pub_x.publish(toROSType(ext_cartesian_wrench(0)));
+    ext_cart_force_pub_y.publish(toROSType(ext_cartesian_wrench(1)));
+    ext_cart_force_pub_z.publish(toROSType(ext_cartesian_wrench(2)));
   }
   return ext_cartesian_wrench;
 
