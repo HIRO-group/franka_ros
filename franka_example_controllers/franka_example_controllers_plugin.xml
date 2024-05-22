@@ -4,6 +4,11 @@
       A controller that executes a short motion based on joint velocities to demonstrate correct usage
     </description>
   </class>
+   <class name="franka_example_controllers/HIROJointVelocityExampleController" type="franka_example_controllers::HIROJointVelocityExampleController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      Starts ros message controller interface for the HIRO lab
+    </description>
+  </class>
   <class name="franka_example_controllers/JointPositionExampleController" type="franka_example_controllers::JointPositionExampleController" base_class_type="controller_interface::ControllerBase">
     <description>
       A controller that executes a short motion based on joint positions to demonstrate correct usage
@@ -34,7 +39,17 @@
       A controller that tracks a cartesian path with a joint impedance controller that compensates coriolis torques. The torque commands are compared to measured torques in Console outputs.
     </description>
   </class>
+  <class name="franka_example_controllers/HIROJointImpedanceExampleController" type="franka_example_controllers::HIROJointImpedanceExampleController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that tracks a cartesian path with a joint impedance controller that compensates coriolis torques. The torque commands are compared to measured torques in Console outputs.
+    </description>
+  </class>
   <class name="franka_example_controllers/CartesianImpedanceExampleController" type="franka_example_controllers::CartesianImpedanceExampleController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that renders a spring damper system in cartesian space. Compliance parameters and the equilibrium pose can be modified online with dynamic reconfigure and an interactive marker respectively.
+    </description>
+  </class>
+  <class name="franka_example_controllers/HIROCartesianImpedanceExampleController" type="franka_example_controllers::HIROCartesianImpedanceExampleController" base_class_type="controller_interface::ControllerBase">
     <description>
       A controller that renders a spring damper system in cartesian space. Compliance parameters and the equilibrium pose can be modified online with dynamic reconfigure and an interactive marker respectively.
     </description>

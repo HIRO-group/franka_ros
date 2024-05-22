@@ -9,6 +9,18 @@ joint_velocity_example_controller:
         - $(arg arm_id)_joint5
         - $(arg arm_id)_joint6
         - $(arg arm_id)_joint7
+        
+hiro_joint_velocity_example_controller:
+    type: franka_example_controllers/HIROJointVelocityExampleController
+    arm_id: $(arg arm_id)
+    joint_names:
+        - $(arg arm_id)_joint1
+        - $(arg arm_id)_joint2
+        - $(arg arm_id)_joint3
+        - $(arg arm_id)_joint4
+        - $(arg arm_id)_joint5
+        - $(arg arm_id)_joint6
+        - $(arg arm_id)_joint7
 
 joint_position_example_controller:
     type: franka_example_controllers/JointPositionExampleController
@@ -49,6 +61,39 @@ force_example_controller:
         - $(arg arm_id)_joint6
         - $(arg arm_id)_joint7
 
+hiro_joint_impedance_example_controller:
+    type: franka_example_controllers/HIROJointImpedanceExampleController
+    arm_id: $(arg arm_id)
+    joint_names:
+        - $(arg arm_id)_joint1
+        - $(arg arm_id)_joint2
+        - $(arg arm_id)_joint3
+        - $(arg arm_id)_joint4
+        - $(arg arm_id)_joint5
+        - $(arg arm_id)_joint6
+        - $(arg arm_id)_joint7
+    k_gains:
+        - 10.0
+        - 10.0
+        - 10.0
+        - 10.0
+        - 5.0
+        - 3.0
+        - 1.0
+    d_gains:
+        - 5.0
+        - 5.0
+        - 5.0
+        - 2.0
+        - 2.0
+        - 2.0
+        - 1.0
+    radius: 0.1
+    acceleration_time: 2.0
+    vel_max: 0.15
+    publish_rate: 10.0
+    coriolis_factor: 1.0
+
 joint_impedance_example_controller:
     type: franka_example_controllers/JointImpedanceExampleController
     arm_id: $(arg arm_id)
@@ -84,6 +129,18 @@ joint_impedance_example_controller:
 
 cartesian_impedance_example_controller:
     type: franka_example_controllers/CartesianImpedanceExampleController
+    arm_id: $(arg arm_id)
+    joint_names:
+        - $(arg arm_id)_joint1
+        - $(arg arm_id)_joint2
+        - $(arg arm_id)_joint3
+        - $(arg arm_id)_joint4
+        - $(arg arm_id)_joint5
+        - $(arg arm_id)_joint6
+        - $(arg arm_id)_joint7
+
+hiro_cartesian_impedance_example_controller:
+    type: franka_example_controllers/HIROCartesianImpedanceExampleController
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1

@@ -72,6 +72,7 @@ catkin_package(
 )
 
 add_library(franka_example_controllers
+  src/hiro_joint_velocity_example_controller.cpp 
   src/elbow_example_controller.cpp
   src/cartesian_pose_example_controller.cpp
   src/cartesian_velocity_example_controller.cpp
@@ -79,7 +80,9 @@ add_library(franka_example_controllers
   src/joint_velocity_example_controller.cpp
   src/model_example_controller.cpp
   src/joint_impedance_example_controller.cpp
+  src/hiro_joint_impedance_example_controller.cpp
   src/cartesian_impedance_example_controller.cpp
+  src/hiro_cartesian_impedance_example_controller.cpp
   src/force_example_controller.cpp
   src/dual_arm_cartesian_impedance_example_controller.cpp
   src/teleop_joint_pd_example_controller.cpp
