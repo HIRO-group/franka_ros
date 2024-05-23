@@ -62,9 +62,10 @@ class HIROJointImpedanceExampleController : public controller_interface::MultiIn
   std::mutex joint_position_and_velocity_d_target_mutex_;
   std::vector<double> joint_positions_{0,0,0,0,0,0,0};
   bool callback_done_once = false;
-  // void jointCommandCb(const sensor_msgs::JointState::ConstPtr& joint_pos_commands);
-  void jointCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands);
+  void xboxCommandCb(const sensor_msgs::JointState::ConstPtr& joint_pos_commands);
+  void cuRoboCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands);
   ros::Subscriber sub_command_;
+  ros::Subscriber sub_command2_;
 };
 
 }  // namespace franka_example_controllers

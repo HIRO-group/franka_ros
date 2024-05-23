@@ -16,8 +16,13 @@ namespace franka_example_controllers {
 bool HIROJointImpedanceExampleController::init(hardware_interface::RobotHW* robot_hw,
                                            ros::NodeHandle& node_handle) {
   std::string arm_id;
-   sub_command_ = node_handle.subscribe<std_msgs::Float32MultiArray>(
-                  "/cu_joint_solution", 1, &HIROJointImpedanceExampleController::jointCommandCb, this); 
+  /* CB function for curobo*/
+  sub_command_ = node_handle.subscribe<std_msgs::Float32MultiArray>(
+                  "/cu_joint_solution", 1, &HIROJointImpedanceExampleController::cuRoboCommandCb, this); 
+                  
+  /* CB function for xbox_input file*/
+  sub_command2_ = node_handle.subscribe<sensor_msgs::JointState>(
+                  "/relaxed_ik/joint_angle_solutions", 1, &HIROJointImpedanceExampleController::xboxCommandCb, this); 
 
   if (!node_handle.getParam("arm_id", arm_id)) {
     ROS_ERROR("JointImpedanceExampleController: Could not read parameter arm_id");
@@ -134,13 +139,12 @@ void HIROJointImpedanceExampleController::starting(const ros::Time& /*time*/) {
   initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
 }
 
-// void HIROJointImpedanceExampleController::jointCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands) {
-//     std::lock_guard<std::mutex> q_and_qdot_lock_mutex(joint_position_and_velocity_d_target_mutex_);
-//     for (int i = 0; i < 7; i++) joint_positions_[i] = joint_pos_commands->position[i];
-//     this->callback_done_once = true;
-// }
+void HIROJointImpedanceExampleController::xboxCommandCb(const sensor_msgs::JointState::ConstPtr& joint_pos_commands) {
+    for (int i = 0; i < 7; i++) joint_positions_[i] = joint_pos_commands->position[i];
+    this->callback_done_once = true;
+}
 
-void HIROJointImpedanceExampleController::jointCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands) {
+void HIROJointImpedanceExampleController::cuRoboCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands) {
     std::lock_guard<std::mutex> q_and_qdot_lock_mutex(joint_position_and_velocity_d_target_mutex_);
     for (int i = 0; i < 7; i++) joint_positions_[i] = joint_pos_commands->data[i];
     this->callback_done_once = true;
