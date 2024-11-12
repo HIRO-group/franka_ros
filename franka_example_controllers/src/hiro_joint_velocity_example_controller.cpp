@@ -108,7 +108,7 @@ void HIROJointVelocityExampleController::jointCommandCb(const sensor_msgs::Joint
     for (int i = 0; i < 7; i++) joint_positions_[i] = joint_pos_commands->position[i];
     this->callback_done_once = true;
     this->last_time_called = ros::Time::now().toSec();
-    std::cout << this->last_time_called << std::endl;
+    // std::cout << this->last_time_called << std::endl;
 }
 
 void HIROJointVelocityExampleController::starting(const ros::Time& /* time */) {
@@ -128,7 +128,7 @@ void HIROJointVelocityExampleController::update(const ros::Time& /* time */,
   elapsed_time_ += period;
   if ((ros::Time::now().toSec() - this->last_time_called) > 3) {
         for (int i = 0; i < 7; i++) velocity_joint_handles_[i].setCommand(0.0);
-        std::cout << "Set Vel to ZERO ******" << std::endl;
+        // std::cout << "Set Vel to ZERO ******" << std::endl;
 
   } else if(this->callback_done_once) {  // If command recieved, send the command to the controller
         for (int i = 0; i < 7; i++) {
