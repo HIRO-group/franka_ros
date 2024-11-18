@@ -20,6 +20,7 @@
 #include <franka_hw/trigger_rate.h>
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Bool.h>
 
 namespace franka_example_controllers {
 
@@ -49,11 +50,9 @@ class HIROJointImpedanceExampleController : public controller_interface::MultiIn
   double angle_{0.0};
   double vel_current_{0.0};
 
-  std::vector<double> k_gains_;
-  std::vector<double> d_gains_;
   double coriolis_factor_{1.0};
   std::array<double, 7> dq_filtered_;
-  std::array<double, 16> initial_pose_;
+  std::array<double, 16> pose_from_cb_;
 
   franka_hw::TriggerRate rate_trigger_{1.0};
   std::array<double, 7> last_tau_d_{};
@@ -64,8 +63,24 @@ class HIROJointImpedanceExampleController : public controller_interface::MultiIn
   bool callback_done_once = false;
   void xboxCommandCb(const sensor_msgs::JointState::ConstPtr& joint_pos_commands);
   void cuRoboCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands);
+  void impedanceChangeBoolCb(const std_msgs::Bool::ConstPtr& impedance_change_bool);
   ros::Subscriber sub_command_;
   ros::Subscriber sub_command2_;
+  ros::Subscriber sub_impedance_change_bool_;
+  // std::vector<double> non_zero_imp_k{600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0};
+  // std::vector<double> non_zero_imp_d{50.0, 50.0, 50.0, 20.0, 20.0, 20.0, 10.0};
+  // std::vector<double> k_gains_{160.0, 160.0, 160.0, 160.0, 80.0, 48.0, 16.0};
+  // std::vector<double> d_gains_{40.0, 40.0, 40.0, 16.0, 16.0, 16.0, 8.0};
+  std::vector<double> k_gains_{80.0, 80.0, 80.0, 80.0, 40.0, 24.0, 8.0};
+  std::vector<double> d_gains_{40.0, 40.0, 40.0, 16.0, 16.0, 16.0, 8.0};
+  // std::vector<double> k_gains_{40.0, 40.0, 40.0, 40.0, 20.0, 12.0, 4.0};
+  // std::vector<double> d_gains_{20.0, 20.0, 20.0, 8.0, 8.0, 8.0, 4.0};
+  // std::vector<double> non_zero_imp_k{160.0, 160.0, 160.0, 160.0, 80.0, 48.0, 16.0};
+  // std::vector<double> non_zero_imp_d{40.0, 40.0, 40.0, 16.0, 16.0, 16.0, 8.0};
+  std::vector<double> non_zero_imp_k{80.0, 80.0, 80.0, 80.0, 40.0, 24.0, 8.0};
+  std::vector<double> non_zero_imp_d{40.0, 40.0, 40.0, 16.0, 16.0, 16.0, 8.0};
+  // std::vector<double> non_zero_imp_k{40.0, 40.0, 40.0, 40.0, 20.0, 12.0, 4.0};
+  // std::vector<double> non_zero_imp_d{20.0, 20.0, 20.0, 8.0, 8.0, 8.0, 4.0};
 };
 
 }  // namespace franka_example_controllers

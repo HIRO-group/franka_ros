@@ -19,6 +19,9 @@ bool HIROJointImpedanceExampleController::init(hardware_interface::RobotHW* robo
   /* CB function for curobo*/
   sub_command_ = node_handle.subscribe<std_msgs::Float32MultiArray>(
                   "/cu_joint_solution", 1, &HIROJointImpedanceExampleController::cuRoboCommandCb, this); 
+
+  sub_impedance_change_bool_ = node_handle.subscribe<std_msgs::Bool>(
+                  "/impedance_change_bool", 1, &HIROJointImpedanceExampleController::impedanceChangeBoolCb, this);
                   
   /* CB function for xbox_input file*/
   sub_command2_ = node_handle.subscribe<sensor_msgs::JointState>(
@@ -51,20 +54,6 @@ bool HIROJointImpedanceExampleController::init(hardware_interface::RobotHW* robo
   if (!node_handle.getParam("joint_names", joint_names) || joint_names.size() != 7) {
     ROS_ERROR(
         "JointImpedanceExampleController: Invalid or no joint_names parameters provided, aborting "
-        "controller init!");
-    return false;
-  }
-
-  if (!node_handle.getParam("k_gains", k_gains_) || k_gains_.size() != 7) {
-    ROS_ERROR(
-        "JointImpedanceExampleController:  Invalid or no k_gain parameters provided, aborting "
-        "controller init!");
-    return false;
-  }
-
-  if (!node_handle.getParam("d_gains", d_gains_) || d_gains_.size() != 7) {
-    ROS_ERROR(
-        "JointImpedanceExampleController:  Invalid or no d_gain parameters provided, aborting "
         "controller init!");
     return false;
   }
@@ -128,6 +117,11 @@ bool HIROJointImpedanceExampleController::init(hardware_interface::RobotHW* robo
       return false;
     }
   }
+
+  for (int i = 0; i < 7; i++){
+            k_gains_[i] = non_zero_imp_k[i];
+            d_gains_[i] = non_zero_imp_d[i];
+  }
   torques_publisher_.init(node_handle, "torque_comparison", 1);
 
   std::fill(dq_filtered_.begin(), dq_filtered_.end(), 0);
@@ -136,12 +130,42 @@ bool HIROJointImpedanceExampleController::init(hardware_interface::RobotHW* robo
 }
 
 void HIROJointImpedanceExampleController::starting(const ros::Time& /*time*/) {
-  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+  pose_from_cb_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
 }
 
 void HIROJointImpedanceExampleController::xboxCommandCb(const sensor_msgs::JointState::ConstPtr& joint_pos_commands) {
     for (int i = 0; i < 7; i++) joint_positions_[i] = joint_pos_commands->position[i];
     this->callback_done_once = true;
+}
+
+void HIROJointImpedanceExampleController::impedanceChangeBoolCb(const std_msgs::Bool::ConstPtr& impedance_change_bool){
+    std::lock_guard<std::mutex> q_and_qdot_lock_mutex(joint_position_and_velocity_d_target_mutex_);
+    if(impedance_change_bool->data){
+        for (int i = 0; i < 7; i++){
+            k_gains_[i] = 0.0;
+            d_gains_[i] = 0.0;
+        }
+        // pose_from_cb_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+        // std::array<double, 16> pose_desired = pose_from_cb_;
+        // // std::cout << "Curr pose, impedance zero: " << pose_desired[12] << " " << pose_desired[13] << " " << pose_desired[14] << std::endl;
+        // cartesian_pose_handle_->setCommand(pose_desired);
+        // this->callback_done_once = true;
+    }
+    else{
+        // pose_from_cb_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+        // std::array<double, 16> pose_desired = pose_from_cb_;
+        // cartesian_pose_handle_->setCommand(pose_desired);
+        // for (size_t i = 0; i < 7; ++i) {
+        //     joint_positions_[i] = cartesian_pose_handle_->getRobotState().q[i];
+        // }
+        
+        for (int i = 0; i < 7; i++){
+            k_gains_[i] = non_zero_imp_k[i];
+            d_gains_[i] = non_zero_imp_d[i];
+        }
+
+        // std::cout << "Curr pose, impedance a trillion: " << pose_desired[12] << " " << pose_desired[13] << " " << pose_desired[14] << std::endl;
+    }
 }
 
 void HIROJointImpedanceExampleController::cuRoboCommandCb(const std_msgs::Float32MultiArray::ConstPtr& joint_pos_commands) {
@@ -162,15 +186,10 @@ void HIROJointImpedanceExampleController::update(const ros::Time& /*time*/,
     angle_ -= 2 * M_PI;
   }
 
-  double delta_y = radius_ * (1 - std::cos(angle_));
-  double delta_z = radius_ * std::sin(angle_);
-
-  std::array<double, 16> pose_desired = initial_pose_;
-  // pose_desired[13] += delta_y;
-  // pose_desired[14] += delta_z;
-  cartesian_pose_handle_->setCommand(pose_desired);
-
+  std::array<double, 16> pose_desired = pose_from_cb_;
   franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+
+  cartesian_pose_handle_->setCommand(pose_desired);
   std::array<double, 7> coriolis = model_handle_->getCoriolis();
   std::array<double, 7> gravity = model_handle_->getGravity();
 
@@ -181,12 +200,11 @@ void HIROJointImpedanceExampleController::update(const ros::Time& /*time*/,
 
   std::array<double, 7> tau_d_calculated;
   if(this->callback_done_once){
-    // std::cout<< "in CALLLBACK!!" << std::endl;
     std::lock_guard<std::mutex> q_and_qdot_lock_mutex(joint_position_and_velocity_d_target_mutex_);
     for (size_t i = 0; i < 7; ++i) {
       tau_d_calculated[i] = coriolis_factor_ * coriolis[i] +
                             k_gains_[i] * (joint_positions_[i] - robot_state.q[i]) +
-                            d_gains_[i] * (0.5 *(joint_positions_[i] - robot_state.q[i]) - dq_filtered_[i]);
+                            d_gains_[i] * ((joint_positions_[i] - robot_state.q[i]) - dq_filtered_[i]);
     }
     joint_position_and_velocity_d_target_mutex_.unlock();
   }else{
@@ -204,7 +222,6 @@ void HIROJointImpedanceExampleController::update(const ros::Time& /*time*/,
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(tau_d_saturated[i]);
   }
-
   if (rate_trigger_() && torques_publisher_.trylock()) {
     std::array<double, 7> tau_j = robot_state.tau_J;
     std::array<double, 7> tau_error;
@@ -221,7 +238,6 @@ void HIROJointImpedanceExampleController::update(const ros::Time& /*time*/,
     }
     torques_publisher_.unlockAndPublish();
   }
-
   for (size_t i = 0; i < 7; ++i) {
     last_tau_d_[i] = tau_d_saturated[i] + gravity[i];
   }
