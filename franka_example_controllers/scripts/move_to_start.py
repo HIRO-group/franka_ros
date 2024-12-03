@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+'''#!/usr/bin/env python
 import sys
 import rospy as ros
 
@@ -122,8 +122,12 @@ points = []
 for index in range(0,len(data['q'])):
     print(len(data['q']))
     point = JointTrajectoryPoint()
-    point.time_from_start = ros.Duration.from_sec(
-        (index+1)*0.033
+    if index == 0:
+        point.time_from_start = ros.Duration.from_sec(
+            1)
+    else:
+        point.time_from_start = ros.Duration.from_sec(
+            1+((index+1)*0.066)
     )
     #point.time_from_start = ros.Duration.from_sec(
     #    # Use either the time to move the furthest joint with 'max_dq' or 500ms,
@@ -198,4 +202,3 @@ if result.error_code != FollowJointTrajectoryResult.SUCCESSFUL:
 
 else:
     ros.loginfo('move_to_start: Successfully moved into start pose')
-'''
