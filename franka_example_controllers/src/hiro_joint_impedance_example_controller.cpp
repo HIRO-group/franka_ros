@@ -152,12 +152,12 @@ void HIROJointImpedanceExampleController::impedanceChangeBoolCb(const std_msgs::
         // this->callback_done_once = true;
     }
     else{
-        // pose_from_cb_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
-        // std::array<double, 16> pose_desired = pose_from_cb_;
-        // cartesian_pose_handle_->setCommand(pose_desired);
-        // for (size_t i = 0; i < 7; ++i) {
-        //     joint_positions_[i] = cartesian_pose_handle_->getRobotState().q[i];
-        // }
+        pose_from_cb_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+        std::array<double, 16> pose_desired = pose_from_cb_;
+        cartesian_pose_handle_->setCommand(pose_desired);
+        for (size_t i = 0; i < 7; ++i) {
+            joint_positions_[i] = cartesian_pose_handle_->getRobotState().q[i];
+        }
         
         for (int i = 0; i < 7; i++){
             k_gains_[i] = non_zero_imp_k[i];
@@ -197,6 +197,20 @@ void HIROJointImpedanceExampleController::update(const ros::Time& /*time*/,
   for (size_t i = 0; i < 7; i++) {
     dq_filtered_[i] = (1 - alpha) * dq_filtered_[i] + alpha * robot_state.dq[i];
   }
+
+  // std::cout << "desired joint states: ";
+  // for (int i = 0; i < 7; i++) {
+  //   std::cout << "Joint " << (i+1) << ": " << joint_positions_[i];
+  //   if (i < 6) std::cout << " | ";
+  //   else std::cout << std::endl;
+  // }
+
+  // std::cout << "real joint states: ";
+  // for (int i = 0; i < 7; i++) {
+  //   std::cout << "Joint " << (i+1) << ": " << robot_state.q[i];
+  //   if (i < 6) std::cout << " | ";
+  //   else std::cout << std::endl;
+  // }
 
   std::array<double, 7> tau_d_calculated;
   if(this->callback_done_once){
