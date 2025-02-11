@@ -14,6 +14,7 @@ time_step = 0.066
 file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/shy.npz'
 file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/happy.npz'
 file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/hesitant.npz'
+file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/hesitant_arc.npz'
 #file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/angry.npz'
 #file_path = '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/sad.npz'
 if file_path == '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/shy.npz':
@@ -26,6 +27,8 @@ elif file_path == '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/sad
     time_step = 0.066
 elif file_path == '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/hesitant.npz':
     time_step = 0.022
+elif file_path == '/home/caleb/ros_relaxed_ik_ws/src/relaxed_ik_ros1/scripts/hesitant_arc.npz':
+    time_step = 0.066
 data = np.load(file_path)
 print(data['q'],data['qdot'])
 print(len(data['q']), len(data['qdot']), "C")
