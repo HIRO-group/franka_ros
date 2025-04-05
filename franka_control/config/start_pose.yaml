@@ -1,3 +1,23 @@
+# joint_pose: 
+#   $(arg arm_id)_joint1: -1.5068964509919625
+#   $(arg arm_id)_joint2: -1.1224627436032437
+#   $(arg arm_id)_joint3: 1.8138224307530793
+#   $(arg arm_id)_joint4: -2.1328473714901017
+#   $(arg arm_id)_joint5: 0.5115448860038824
+#   $(arg arm_id)_joint6: 2.1736379015556673
+#   $(arg arm_id)_joint7: 2.3921745188128587
+
+# joint_pose: 
+#   $(arg arm_id)_joint1: -1.5346568982129793
+#   $(arg arm_id)_joint2: -1.003134162988846
+#   $(arg arm_id)_joint3: 1.2283325938911522
+#   $(arg arm_id)_joint4: -2.17841255270902
+#   $(arg arm_id)_joint5: 0.7297335767207658
+#   $(arg arm_id)_joint6: 1.8589651121343236
+#   $(arg arm_id)_joint7: 1.763205827325163
+
+
+# Caleb Comment out for new start pose to test octo
 joint_pose:
   $(arg arm_id)_joint1: 0
   $(arg arm_id)_joint2: -0.785398163397

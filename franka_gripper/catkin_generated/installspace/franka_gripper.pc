@@ -1,0 +1,8 @@
+prefix=/home/caleb/ros_relaxed_ik_ws/install
+
+Name: franka_gripper
+Description: Description of franka_gripper
+Version: 0.10.1
+Cflags: -I${prefix}/include -I/home/caleb/libfranka/include
+Libs: -L${prefix}/lib -lfranka_gripper /home/caleb/libfranka/build/libfranka.so.0.13.3
+Requires: roscpp message_runtime control_msgs actionlib sensor_msgs xmlrpcpp actionlib_msgs

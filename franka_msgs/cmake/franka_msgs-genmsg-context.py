@@ -1,0 +1,11 @@
+# generated from genmsg/cmake/pkg-genmsg.context.in
+
+messages_str = "/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/msg/Errors.msg;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/msg/FrankaState.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryAction.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryActionGoal.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryActionResult.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryActionFeedback.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryGoal.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryResult.msg;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg/ErrorRecoveryFeedback.msg"
+services_str = "/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetCartesianImpedance.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetEEFrame.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetForceTorqueCollisionBehavior.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetFullCollisionBehavior.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetJointConfiguration.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetJointImpedance.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetKFrame.srv;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/srv/SetLoad.srv"
+pkg_name = "franka_msgs"
+dependencies_str = "std_msgs;sensor_msgs;actionlib_msgs"
+langs = "gencpp;geneus;genlisp;gennodejs;genpy"
+dep_include_paths_str = "franka_msgs;/home/caleb/ros_relaxed_ik_ws/src/franka_ros/franka_msgs/msg;franka_msgs;/home/caleb/ros_relaxed_ik_ws/devel/share/franka_msgs/msg;std_msgs;/home/caleb/ros_relaxed_ik_ws/src/std_msgs/msg;sensor_msgs;/home/caleb/ros_relaxed_ik_ws/src/common_msgs/sensor_msgs/msg;actionlib_msgs;/home/caleb/ros_relaxed_ik_ws/src/common_msgs/actionlib_msgs/msg;geometry_msgs;/home/caleb/ros_relaxed_ik_ws/src/common_msgs/geometry_msgs/msg"
+PYTHON_EXECUTABLE = "/usr/bin/python3"
+package_has_static_sources = '' == 'TRUE'
+genmsg_check_deps_script = "/home/caleb/ros_relaxed_ik_ws/src/genmsg/scripts/genmsg_check_deps.py"
